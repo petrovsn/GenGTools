@@ -77,6 +77,12 @@ public:
 
 	void Init(int base, int len)
 	{
+		this->str = "";
+		this->curr_len = 0;
+		this->currhash = 0;
+
+		p.clear();
+
 		this->base = base;
 		this->len = len;
 		for (int i = len - 1; i >= 0; i--)

@@ -372,6 +372,7 @@ void Graph::SaveIndex(string filename)
 {
 	ofstream f_out;
 	f_out.open(filename);
+	f_out << GH.base << '.' << GH.len << endl;
 	for (auto t : hashtable)
 	{
 		f_out << t.first << '.' << t.second.size();
@@ -393,7 +394,13 @@ void Graph::LoadIndex(string filename)
 	hashtable.clear();
 	ifstream f_in;
 	f_in.open(filename);
+
 	string buf;
+	getline(f_in, buf, '.');
+	int ghbase = stoi(buf);
+	getline(f_in, buf);
+	int ghlen = stoi(buf);
+	GH.Init(ghbase, ghlen);
 	do
 	{
 		getline(f_in, buf, '.');
@@ -422,4 +429,308 @@ void Graph::Clear()
 {
 	hashtable.clear();
 	Body.clear();
+}
+
+
+//================================================================================================
+
+int Graph::NotSimpleFinderSNAP(string str, int err_count)
+{
+	cout << "SNAPrun->" << str << endl;
+	if (str.length()<GH.len) return -1;
+	int res = -1;
+	vector<unsigned long long> hash_seeds;
+	GH.ReInit(-2, str);
+
+	for (int i = 0; i<str.length(); i++)
+	{
+		int res = GH.Next(str[i]);
+		if (res == 0)
+		{
+			hash_seeds.push_back(GH.currhash);
+		}
+	}
+
+
+
+	vector<vector<WArray>> hit_place; //(hash_seeds.size());
+
+	for (int i = 0; i<hash_seeds.size(); i++)
+	{
+		vector<WArray> tmp;
+		hit_place.push_back(tmp);
+		for (int j = 0; j<hashtable[hash_seeds[i]].size(); j++)
+		{
+			hit_place[i].push_back(hashtable[hash_seeds[i]][j]);
+		}
+	}
+
+
+	res = ASTRun(str, str.length(), hit_place, err_count);
+	return res;
+}
+
+int Graph::ASTRun(string str, int pos_end, vector<vector<WArray>> hit_place, int err_count)
+{
+	cout << "Astrun->" << str << endl;
+
+	bool mishit;
+
+	int z_count = 0;
+	int pos = 0;
+	int pos_check = GH.len - 1;
+	int step = GH.len - 1;
+
+	int htsz = hit_place.size();
+	cout << "htsz: " << htsz << endl;
+	if (htsz <= step)
+	{
+		cout << "ASTRun. Short" << endl;
+		return 0;
+	}
+
+	vector<vector<WArray>> VP1;
+	vector<WArray> VP2;
+
+
+	VP1.push_back(hit_place[0]);
+
+	cout << "forward_run" << endl;
+	do
+	{
+		pos += step;
+		//cout << "pos: " << pos << endl;
+		//cout << "Running dangerous function" << endl;
+		VP2 = NextPos(VP1.back(), hit_place[pos]);
+		//cout << "We are here! We are returned" << endl;
+		if (VP2.size() == 0)
+		{
+			if (z_count >= err_count)
+				return -1;
+			pos -= step;
+
+			//cout << "err_block, pos: " << pos << endl;
+			step = GH.len * 2 + 1;
+
+			int tmp_hps = hit_place.size();
+
+			if (pos + step >= tmp_hps)
+			{
+				//cout << "err_block, tail of read" << endl;
+				step = tmp_hps - pos - 1;
+			}
+
+			//cout << "err_block, NJ" << endl;
+			NodeJump(VP1.back(), step, VP2); //обычный джамп
+
+			z_count++;
+
+			vector<WArray> tmpVP3;
+
+			//cout << "err_block, NP: " << VP2.size() << '/' << hit_place[pos + step].size() << "\t" << pos + step << "\t" << hit_place.size() << endl;
+			//cout << "second entry into dangerous function" << endl;
+			tmpVP3 = NextPos(VP2, hit_place[pos + step]); //check mis hit (sorry, but I read "check my shit" all times)
+
+														  //cout << "err_block, NP_end:"; //<< tmpVP3.size();
+			if (tmpVP3.size() == 0)
+			{
+				//cout << "err_block, NW+" << endl;
+				step += 1;
+				if (pos + step<tmp_hps)
+					tmpVP3 = NextPos(VP2, hit_place[pos + step]); //checkdeletion
+			}
+			if (tmpVP3.size() == 0)
+			{
+				////cout << "err_block, NW-" << endl;
+				step -= 2;
+				if (pos + step<tmp_hps)
+					tmpVP3 = NextPos(VP2, hit_place[pos + step]); //checkinseption
+			}
+
+			if (tmpVP3.size() == 0) return -1;
+
+			VP2 = NextPos_back(VP2, tmpVP3);
+
+			if (VP2.size() == 0) return -1;
+
+			//VP2 = NW_check(VP2, str.substr(pos, step));
+
+			if (VP2.size() == 0) return -1;
+
+			VP1.push_back(VP2);
+			VP1.push_back(tmpVP3);
+			pos += step;
+			pos_check += step;
+		}
+		else
+		{
+
+			VP1.push_back(VP2);
+
+		}
+		pos_check += step;
+		step = GH.len - 1;
+
+	} while (pos_check <= pos_end - GH.len);
+
+
+	if (pos != hit_place.size() - 1)
+	{
+		//VP2 = TailCheck(VP1.back(), hit_place.back(), hit_place.size() - 1 - pos);
+	}
+	VP1.pop_back();
+	VP1.push_back(VP2);
+
+
+	//backward run
+	for (int i = VP1.size() - 1; i >= 0; i--)
+	{
+
+	}
+
+
+
+
+
+	cout << "ASTRun completed" << endl;
+
+	for (int i = 0; i < VP1.size(); i++)
+	{
+		for (int j = 0; j < VP1[i].size(); j++)
+		{
+			cout << VP1[i][j].value[0] << '.' << VP1[i][j].value[1] << '\t';
+		}
+		//cout << '\n';
+	}
+
+
+	return 0;
+}
+
+vector<WArray> Graph::NextPos(vector<WArray>& VP1_last, vector<WArray> hits)
+{
+	vector<WArray> res;
+
+	for (auto v : VP1_last)
+	{
+		int node = v.value[2];
+		int pos = v.value[3];
+		for (int i = 0; i<hits.size(); i++)
+		{
+			//cout << "NP: " << node << '.' << pos << '.' << hits[i].value[0] << '.' << hits[i].value[1] << endl;
+			if ((node == hits[i].value[0]) && (pos == hits[i].value[1]))
+			{
+				//cout << "NP: checked" << endl;
+				WArray *tmp = new WArray();
+				tmp->value[0] = hits[i].value[0];
+				tmp->value[1] = hits[i].value[1];
+				tmp->value[2] = hits[i].value[2];
+				tmp->value[3] = hits[i].value[3];
+				//cout << "NP: tmp created" << endl;
+				res.push_back(*tmp);
+				//cout << "pushed" << endl;
+			}
+		}
+	}
+	//cout << "Prepared for sort" << endl;
+	sort(res.begin(), res.end());
+	//cout << "Sorted" << endl;
+	res.resize(abs(distance(unique(res.begin(), res.end()), res.begin())));
+	//cout << "Resized" << endl;
+	return res;
+
+
+}
+
+vector<WArray> Graph::NextPos_back(vector<WArray> VP1_last, vector<WArray> hits)
+{
+	vector<WArray> res;
+	for (auto v : VP1_last)
+	{
+		int node = v.value[2];
+		int pos = v.value[3];
+		for (int i = 0; i<hits.size(); i++)
+		{
+			if ((node == hits[i].value[0]) && (pos == hits[i].value[1]))
+			{
+				res.push_back(v);
+			}
+		}
+	}
+
+	sort(res.begin(), res.end());
+	res.resize(unique(res.begin(), res.end()) - res.begin());
+	return res;
+
+
+}
+
+void Graph::NodeJump(vector<WArray> VP1, int len, vector<WArray> &res, int c_pos)
+{
+	for (auto v : VP1)
+	{
+		int node = v.value[0];
+		int pos = v.value[1];
+		NodeJump(Body[node], pos, node, pos, len, res, c_pos);
+	}
+
+	sort(res.begin(), res.end());
+	res.resize(unique(res.begin(), res.end()) - res.begin());
+
+}
+
+void Graph::NodeJump(Node n, int pos, int s_n, int s_pos, int len, vector<WArray> &res, int c_pos)
+{
+	if ((n.str.length() - pos)>(len - c_pos))
+	{
+		//cout << "NJ_push" << s_n << '.' << s_pos << '.' << n.ID << '.' << pos + len - c_pos << endl;
+
+		WArray tmp;
+		tmp.value[0] = s_n;
+		tmp.value[1] = s_pos;
+		tmp.value[2] = n.ID;
+		tmp.value[3] = pos + len - c_pos;
+		res.push_back(tmp);
+		//cout << "return here" << endl;
+		return;
+	}
+	//cout << "final node jump first block" << endl;
+	for (auto n1 : n.Next)
+	{
+		NodeJump(*n1.second, 0, s_n, s_pos, len, res, c_pos + n.str.length() - pos);
+	}
+}
+
+vector<WArray> Graph::TailCheck(vector<WArray> VP1, vector<WArray> end, int len)
+{
+	vector<WArray> res;
+	for (auto v : VP1)
+	{
+		int node = v.value[2];
+		int pos = v.value[3];
+		int c_pos = 0;
+		TailCheck(Body[node], pos, node, pos, len, end, res);
+	}
+	return res;
+}
+
+void Graph::TailCheck(Node n, int pos, int s_n, int s_pos, int len, vector<WArray> end, vector<WArray> &res, int c_pos)
+{
+	for (int i = 0; i < end.size(); i++)
+	{
+		if ((n.ID == end[i].value[0]) && (len - c_pos))
+		{
+			WArray tmp;
+			tmp.value[0] = s_n;
+			tmp.value[1] = s_pos;
+			tmp.value[2] = n.ID;
+			tmp.value[3] = pos + len - c_pos;
+			res.push_back(tmp);
+			return;
+		}
+	}
+	for (auto n1 : n.Next)
+	{
+		TailCheck(*n1.second, 0, s_n, s_pos, len, end, res, c_pos + n.str.length() - pos);
+	}
 }

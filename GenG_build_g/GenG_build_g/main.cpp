@@ -51,6 +51,6 @@ void main(int argc, const char* argv[])
 	//main_graph.Clear();
 
 	
-	supp_graph.Load(argv5 + ".gngg");
-	supp_graph.LoadIndex(argv5 + ".gngidx");
+	//supp_graph.Load(argv5 + ".gngg");
+	//supp_graph.LoadIndex(argv5 + ".gngidx");
 }
