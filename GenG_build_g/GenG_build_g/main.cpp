@@ -15,7 +15,9 @@
 #include <Graph.h>
 #include <VarReader.h>
 #include <Fasta.h>
+#include "G:/Main/VS17/Projects/GenGTools/libs/boost/program_options/parsers.hpp";
 
+namespace po = boost::program_options;
 using namespace std;
 
 Graph main_graph;
@@ -30,7 +32,7 @@ void main(int argc, const char* argv[])
 	string argv4 = dir + "mafft/";
 	string argv5 = dir + "out_graph";
 
-
+	
 	
 	VariationData VD1;
 	string ref1 = loadfasta(argv1);

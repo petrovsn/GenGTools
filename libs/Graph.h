@@ -1,4 +1,3 @@
-#pragma once
 #include <iostream>
 #include <stdio.h>
 #include <vector>
@@ -14,144 +13,19 @@
 #include <math.h>
 #include <sstream>
 #include <algorithm>
+
 #include <GenerHash.h>
+#include <Node.h>
+#include <WArray.h>
+#include <TAligner.h>
+#include <SAligner.h>
+
 using namespace std;
-
-
-class Node
-{
-public:
-	int ID;    //id == -1 - final node of thread
-	string  str;
-	bool NaNbp;
-	bool End;
-	map<int, Node*> Prev;
-	map<int, Node*> Next; 
-	unordered_map<int, int> B; //threads 
-
-	Node()
-	{
-		this->ID = -1;
-		this->str = "";
-		this->End = false;
-		this->NaNbp = false;
-	}
-
-	Node(int id)
-	{
-		this->ID = id;
-		this->str = "";
-		this->End = false;
-		this->NaNbp = false;
-	}
-
-	Node(string str, int id)
-	{
-		this->str = str;
-		this->ID = id;
-		this->End = false;
-		if (str[0] == 'n') this->NaNbp = true;
-		else this->NaNbp = false;
-	}
-
-	const Node operator = (Node& n)
-	{
-		this->ID = n.ID;
-		this->str = n.str;
-
-		this->B = n.B;
-		this->Next = n.Next;
-		this->Prev = n.Prev;
-
-		return *this;
-	}
-
-	Node Split(int pos, int id)
-	{
-		string tmp = this->str.substr(pos, str.length() - pos);
-		this->str = this->str.substr(0, pos);
-
-		Node n_pr(tmp, id);
-
-		(n_pr.Prev).insert(pair<int, Node*>(this->ID, this));
-
-
-
-		for (auto t1 : this->Next)
-		{
-			t1.second->Prev.erase(this->ID);
-			t1.second->Prev.insert(pair<int, Node*>(id, &n_pr));
-			n_pr.Next.insert(t1);
-		}
-
-
-
-		Next.clear();
-		Next.insert(pair<int, Node*>(id, &n_pr));
-
-		return n_pr;
-	}
-
-	void Split(int pos, Node* n_pr)
-	{
-		string tmp = this->str.substr(pos, str.length() - pos);
-		this->str = this->str.substr(0, pos);
-
-		n_pr->str = tmp;
-		n_pr->NaNbp = this->NaNbp;
-
-		(n_pr->Prev).insert(pair<int, Node*>(this->ID, this));
-
-		for (auto t1 : this->Next)
-		{
-			t1.second->Prev.erase(this->ID);
-			t1.second->Prev.insert(pair<int, Node*>(n_pr->ID, n_pr));
-			n_pr->Next.insert(t1);
-		}
-
-		Next.clear();
-		Next.insert(pair<int, Node*>(n_pr->ID, n_pr));
-
-
-
-		for (auto t2 : this->B)
-		{
-			n_pr->B.insert(t2);
-			B[t2.first] = n_pr->ID;
-		}
-
-	}
-
-	void Link(Node *node);
-};
-
-struct WArray
-{
-	unsigned long long int value[4];
-	bool operator <(WArray &b)
-	{
-		return tie(this->value[0], this->value[1], this->value[2], this->value[3]) < tie(b.value[0], b.value[1], b.value[2], b.value[3]);
-	}
-
-	bool operator == (WArray &b)
-	{
-		return (((this->value[0]) == (b.value[0])) && ((this->value[1]) == (b.value[1])) && ((this->value[2]) == (b.value[2])) && ((this->value[3]) == (b.value[3])));
-	}
-	bool operator <(const WArray &b)
-	{
-		return tie(this->value[0], this->value[1], this->value[2], this->value[3]) < tie(b.value[0], b.value[1], b.value[2], b.value[3]);
-	}
-
-	bool operator == (const WArray &b)
-	{
-		return (((this->value[0]) == (b.value[0])) && ((this->value[1]) == (b.value[1])) && ((this->value[2]) == (b.value[2])) && ((this->value[3]) == (b.value[3])));
-	}
-};
 
 class Graph
 {
-
-	map<unsigned long long, Node> Body;
+public:
+	map<int, Node> Body;
 	unordered_map<unsigned long long, vector<WArray>> hashtable;
 	bool IdxBuilded;
 
@@ -180,7 +54,10 @@ class Graph
 	void TailCheck(Node n, int pos, int s_n, int s_pos, int len, vector<WArray> end, vector<WArray> &res, int c_pos = 0);
 
 
-public:
+
+
+
+
 
 	Graph() {};
 	void LoadReference(string ref);
@@ -199,5 +76,10 @@ public:
 	void Clear();
 
 	int NotSimpleFinderSNAP(string str, int err_count = 0);
+
+	int TFinder(string str, int err_count = 0);
+
+
+	int SFinder(string str, int err_count = 0);
 
 };

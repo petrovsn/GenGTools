@@ -1,27 +1,10 @@
-#include <iostream>
-#include <stdio.h>
-#include <vector>
-#include <string>
-#include <fstream>
-#include <cstdio>
-#include <time.h>
-#include <map>
-#include <set>
-#include <math.h>
-#include <unordered_map>
-#include <tuple>
-#include <math.h>
-#include <sstream>
-#include <algorithm>
 #include <Graph.h>
+
+
 
 using namespace std;
 
-void Node::Link(Node *N2)
-{
-	(this->Next).insert(pair<int, Node*>(N2->ID, N2));
-	(N2->Prev).insert(pair<int, Node*>(this->ID, this));
-}
+
 
 void Graph::LoadReference(string ref)
 {
@@ -734,3 +717,101 @@ void Graph::TailCheck(Node n, int pos, int s_n, int s_pos, int len, vector<WArra
 		TailCheck(*n1.second, 0, s_n, s_pos, len, end, res, c_pos + n.str.length() - pos);
 	}
 }
+
+
+//============TFindeer========================================================================================
+int Graph::TFinder(string str, int err_count)
+{
+
+	if (str.length()<GH.len) return -1;
+	int res = -1;
+	vector<unsigned long long> hash_seeds;
+	GH.ReInit(-2, str);
+
+	for (int i = 0; i<str.length(); i++)
+	{
+		int res = GH.Next(str[i]);
+		if (res == 0)
+		{
+			hash_seeds.push_back(GH.currhash);
+		}
+	}
+
+	vector<vector<WArray>> hit_place; //(hash_seeds.size());
+
+	
+
+	for (int i = 0; i<hash_seeds.size(); i++)
+	{
+		vector<WArray> tmp;
+		hit_place.push_back(tmp);
+		for (int j = 0; j<hashtable[hash_seeds[i]].size(); j++)
+		{
+			hit_place[i].push_back(hashtable[hash_seeds[i]][j]);
+		}
+	}
+
+
+
+
+	NodeList nodelist;
+	for (int i = 0; i < hash_seeds.size(); i++)
+	{
+		for (int j = 0; j < hashtable[hash_seeds[i]].size(); j++)
+		{
+			int node = hashtable[hash_seeds[i]][j].value[0];
+			int pos = hashtable[hash_seeds[i]][j].value[1];
+			nodelist.AddPoint(Body[node], pos, i);
+		}
+	}
+
+	
+	nodelist.TRunner();
+	
+	nodelist.TAligner();
+
+	return 0;
+}
+
+
+//============SFinder=========================================================================================
+int Graph::SFinder(string str, int err_count)
+{
+
+	if (str.length()<GH.len) return -1;
+	int res = -1;
+	vector<unsigned long long> hash_seeds;
+	GH.ReInit(-2, str);
+
+	for (int i = 0; i<str.length(); i++)
+	{
+		int res = GH.Next(str[i]);
+		if (res == 0)
+		{
+			hash_seeds.push_back(GH.currhash);
+		}
+	}
+
+	vector<vector<WArray>> hit_place; //(hash_seeds.size());
+
+
+
+	for (int i = 0; i<hash_seeds.size(); i++)
+	{
+		vector<WArray> tmp;
+		hit_place.push_back(tmp);
+		for (int j = 0; j<hashtable[hash_seeds[i]].size(); j++)
+		{
+			hit_place[i].push_back(hashtable[hash_seeds[i]][j]);
+		}
+	}
+
+	
+
+
+	SAligner saligner(GH.len, hit_place);
+	int i = saligner.Run();
+	return 0;
+}
+
+//===========NWPreTracker======================================================================================
