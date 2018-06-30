@@ -15,6 +15,7 @@
 #include <sstream>
 #include <algorithm>
 #include <GenerHash.h>
+#include <BubbleIndex.h>
 
 class Node
 {
@@ -26,6 +27,9 @@ public:
 	map<int, Node*> Prev;
 	map<int, Node*> Next;
 	unordered_map<int, int> B; //threads 
+
+	BubbleIndex bidx;
+
 
 	Node();
 
@@ -40,4 +44,8 @@ public:
 	void Split(int pos, Node* n_pr);
 
 	void Link(Node *node);
+
+	void GenBIdx(BubbleIndex bidx_last, int c, bool p);
+
+	int GetRelation(Node &n); 
 }; 

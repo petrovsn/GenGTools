@@ -53,8 +53,9 @@ public:
 	vector<WArray> TailCheck(vector<WArray> VP1, vector<WArray> end, int len);
 	void TailCheck(Node n, int pos, int s_n, int s_pos, int len, vector<WArray> end, vector<WArray> &res, int c_pos = 0);
 
-
-
+	void BubbleIndexBuild();
+	void BubbleIndexBuildTest();
+	int GetRelation(pair<int, int> p1, pair<int, int> p2);
 
 
 

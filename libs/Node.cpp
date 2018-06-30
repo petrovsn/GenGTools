@@ -99,3 +99,15 @@ void Node::Link(Node *N2)
 	(this->Next).insert(pair<int, Node*>(N2->ID, N2));
 	(N2->Prev).insert(pair<int, Node*>(this->ID, this));
 }
+
+
+void Node::GenBIdx(BubbleIndex bidx_last, int c, bool p)
+{
+	if ((bidx.loaded) || (ID == -1)) return;
+	bidx = BubbleIndex(bidx_last, c, p);
+}
+
+int Node::GetRelation(Node &n)
+{
+	return bidx.Compare(n.bidx);
+}

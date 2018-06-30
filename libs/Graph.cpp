@@ -413,6 +413,50 @@ void Graph::Clear()
 	hashtable.clear();
 	Body.clear();
 }
+//==========================BubbleIndexBuild=======================================================
+void Graph::BubbleIndexBuild()
+{
+	vector<int> markedNode;
+
+	Body[0].bidx = BubbleIndex(true);
+	markedNode.push_back(0);
+	
+	for (int i = 0; i<markedNode.size(); i++)
+	{
+		
+		bool bubble = (Body[markedNode[i]].Next.size() > 1);
+		int c = 0;
+		for (auto n : Body[markedNode[i]].Next)
+		{	
+			Body[n.first].GenBIdx(Body[markedNode[i]].bidx, c, bubble);
+			markedNode.push_back(n.first);
+			c++;
+		}
+	}
+}
+
+void Graph::BubbleIndexBuildTest()
+{
+	int Bs = Body.size();
+	Body[0].bidx = BubbleIndex(true);
+	int c = 0;
+	for (auto t : Body[0].Next)
+	{
+		t.second->GenBIdx(Body[0].bidx, c, true);
+		c++;
+	}
+
+	for (int i = 2; i < Bs; i++)
+	{
+		bool bubble = (Body[i].Next.size() > 1);
+		c = 0;
+		for (auto n : Body[i].Next)
+		{
+			n.second->GenBIdx(Body[i].bidx, c, bubble);
+			c++;
+		}
+	}
+}
 
 
 //================================================================================================
@@ -809,9 +853,33 @@ int Graph::SFinder(string str, int err_count)
 	
 
 
-	SAligner saligner(GH.len, hit_place);
+	SAligner saligner(GH.len, str, hit_place);
 	int i = saligner.Run();
-	return 0;
+ 	int res = saligner.Ligation(str.length(), Body);
+	return res;
 }
 
 //===========NWPreTracker======================================================================================
+
+int Graph::GetRelation(pair<int,int> p1, pair<int, int> p2)
+{
+	 
+	int q = Body[p1.first].GetRelation(Body[p2.first]); //-1 = prev, 0 = parallel, 1 = next;
+	if (q == 3)
+	{
+		if (p1.second < p2.second)
+		{
+			q = 1;
+		}
+		else if (p1.second > p2.second)
+		{
+			q = -1;
+		}
+		else
+		{
+			q = 0;
+		}
+	}
+
+	return q;
+}
