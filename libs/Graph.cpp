@@ -821,18 +821,19 @@ int Graph::TFinder(string str, int err_count)
 //============SFinder=========================================================================================
 int Graph::SFinder(string str, int err_count)
 {
-
+	/*
 	if (str.length()<GH.len) return -1;
 	int res = -1;
 	vector<unsigned long long> hash_seeds;
-	GH.ReInit(-2, str);
+	GenerHash GH2 = GH;
+	GH2.ReInit(-2, str);
 
 	for (int i = 0; i<str.length(); i++)
 	{
-		int res = GH.Next(str[i]);
+		int res = GH2.Next(str[i]);
 		if (res == 0)
 		{
-			hash_seeds.push_back(GH.currhash);
+			hash_seeds.push_back(GH2.currhash);
 		}
 	}
 
@@ -849,13 +850,32 @@ int Graph::SFinder(string str, int err_count)
 			hit_place[i].push_back(hashtable[hash_seeds[i]][j]);
 		}
 	}
+	*/
+	if (str.length()<GH.len) return -1;
+	int res = -1;
+	vector<vector<unsigned long long>> hash_seeds;
 
-	
+	StringVectorHash SVH = StringVectorHash(GH.base, GH.len);
+	hash_seeds = SVH.GetHash(str);
 
+	vector<vector<WArray>> hit_place;
+
+	for (int i = 0; i<hash_seeds.size(); i++)
+	{
+		vector<WArray> tmp;
+		hit_place.push_back(tmp);
+		for (int k = 0; k < hash_seeds[i].size(); k++)
+		{
+			for (int j = 0; j < hashtable[hash_seeds[i][k]].size(); j++)
+			{
+				hit_place[i].push_back(hashtable[hash_seeds[i][k]][j]);
+			}
+		}
+	}
 
 	SAligner saligner(GH.len, str, hit_place);
 	int i = saligner.Run();
- 	int res = saligner.Ligation(str.length(), Body);
+ 	res = saligner.Ligation(str.length(), Body);
 	return res;
 }
 

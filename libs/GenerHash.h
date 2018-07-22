@@ -155,6 +155,183 @@ public:
 	}
 };
 
+
+class aux_SVHash
+{
+	
+
+public:
+	unsigned long long value;
+	string curr_string;
+	aux_SVHash()
+	{
+		curr_string = "";
+		value = 0;
+	}
+
+	aux_SVHash(string newstr, unsigned long long newval) 
+	{
+		curr_string = newstr;
+		value = newval;
+	}
+
+	int ord(char c)
+	{
+		switch (c)
+		{
+		case 'a': return 1;
+			break;
+		case 'c': return 2;
+			break;
+		case 'g': return 3;
+			break;
+		case 't': return 4;
+			break;
+		case 'A': return 1;
+			break;
+		case 'C': return 2;
+			break;
+		case 'G': return 3;
+			break;
+		case 'T': return 4;
+			break;
+		default:
+			cout << "cashe error. unknown simbol: " << c << endl;
+			break;
+		}
+
+	}
+
+	vector<aux_SVHash> Inc(vector<char> c, vector<unsigned long long> &p)
+	{
+		vector<aux_SVHash> tmp;
+		int curr_len = curr_string.size();
+		for (int i = 0; i < c.size(); i++)
+		{
+			unsigned long long tmp_val = value + ord(c[i])*p[curr_len];
+			string tmp_str = curr_string + c[i];
+			tmp.push_back(aux_SVHash(tmp_str, tmp_val));
+		}
+		return tmp;
+	}
+
+	vector<aux_SVHash> Next(vector<char> c, vector<unsigned long long> &p, int base)
+	{
+		vector<aux_SVHash> tmp;
+		int curr_len = curr_string.size();
+		for (int i = 0; i < c.size(); i++)
+		{
+			unsigned long long tmp_val = (value - ord(curr_string[0])*p[0])*base + ord(c[i]);
+			string tmp_str = curr_string.substr(1, curr_string.size() - 1)+c[i];
+			tmp.push_back(aux_SVHash(tmp_str, tmp_val));
+		}
+		return tmp;
+	}
+
+	bool operator == (aux_SVHash &b)
+	{
+		return this->value == b.value;
+	}
+
+	bool operator > (aux_SVHash &b)
+	{
+		return this->value > b.value;
+	}
+
+	bool operator < (aux_SVHash &b)
+	{
+		return this->value < b.value;
+	}
+};
+
+class StringVectorHash
+{
+public:
+	vector<unsigned long long> p;
+	int base;
+	int len;
+
+	vector<aux_SVHash> auxHashes;
+
+
+	int curr_len;
+
+	string str;
+	int id;
+	int pos;
+	int m_pos;
+
+	bool formed;
+
+	StringVectorHash(int base, int len)
+	{
+		this->base = base;
+		this->len = len;
+		for (int i = len - 1; i >= 0; i--)
+		{
+			p.push_back(pow(base, i));
+		}
+	}
+
+	
+	vector<char> transform(char c)
+	{
+		if ((c == 'N') || (c == 'n')) return vector<char>{'a', 'c', 'g', 't'};
+		else return vector<char>{c};
+	}
+	
+	vector<unsigned long long> extract(vector<aux_SVHash> hashes)
+	{
+		vector<unsigned long long> tmp;
+		for (int i = 0; i < hashes.size(); i++)
+		{
+			tmp.push_back(hashes[i].value);
+		}
+		return tmp;
+	}
+
+
+	vector<vector<unsigned long long>> GetHash(string read)
+	{
+		vector<vector<unsigned long long>> res;
+		if (read.size() < len) return res;
+
+		auxHashes.push_back(aux_SVHash("", 0));
+		for (int i = 0; i < len; i++)
+		{
+			vector<aux_SVHash> tmp;
+			for (int j = 0; j < auxHashes.size(); j++)
+			{
+				vector<aux_SVHash> tmp2 = auxHashes[j].Inc(transform(read[i]), p);
+				tmp.insert(tmp.end(), tmp2.begin(), tmp2.end());
+			}
+			sort(tmp.begin(), tmp.end());
+			tmp.resize(abs(distance(unique(tmp.begin(), tmp.end()), tmp.begin())));
+			auxHashes = tmp;
+		}
+
+		res.push_back(extract(auxHashes));
+
+		for (int i = len; i < read.length(); i++)
+		{
+			vector<aux_SVHash> tmp;
+			for (int j = 0; j < auxHashes.size(); j++)
+			{
+				vector<aux_SVHash> tmp2 = auxHashes[j].Next(transform(read[i]), p, base);
+				tmp.insert(tmp.end(), tmp2.begin(), tmp2.end());
+			}
+			sort(tmp.begin(), tmp.end());
+			tmp.resize(abs(distance(unique(tmp.begin(), tmp.end()), tmp.begin())));
+			auxHashes = tmp;
+			res.push_back(extract(auxHashes));
+		}
+
+		return res;
+	}
+
+};
+
+
 struct PoAl
 {
 	int ID;

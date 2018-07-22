@@ -16,14 +16,32 @@
 #include <VarReader.h>
 #include <Fasta.h>
 #include <Interface.h>
+#include <thread>
+#include <future>
 
 using namespace std;
 
 Graph main_graph;
 
+int func(int i, int j)
+{
+	cout << i << endl;
+	return (i + j);
+}
+
+class testclass
+{
+public:
+	testclass() {};
+	int func(int i, int j)
+	{
+		//cout << i << endl;
+		return (i + j);
+	}
+};
 void main(int argc, const char* argv[])
 {
-	string argv5 = argv[1];
+/*	string argv5 = argv[1];
 
 	main_graph.Load(argv5 + ".gngg");
 	main_graph.LoadIndex(argv5 + ".gngidx");
@@ -33,8 +51,9 @@ void main(int argc, const char* argv[])
 	string logfile = argv[3];
 
 	SRAalign(main_graph, testfile, logfile);
+	*/
 
-/*	string dir = "G:/Main/VS17/Data/Ecoli_graph/";
+	string dir = "G:/Main/VS17/Data/Ecoli_graph/";
 	string argv1 = dir + "Ecoli_A39.fasta";
 	string argv2 = dir + "Ecoli_K12.fasta";
 	string argv3 = dir + "out";
@@ -51,13 +70,19 @@ void main(int argc, const char* argv[])
 	main_graph.LoadIndex(argv5 + ".gngidx");
 	main_graph.BubbleIndexBuildTest();
 
+	SRAalign(main_graph, argv5 + ".fasta", argv5 + ".logfasta", 5);
+
+
 //	main_graph.NotSimpleFinderSNAP(ref1.substr(50, 2000));
 
-	main_graph.SFinder(ref1.substr(2000, 100)+ref1.substr(3000,100) + ref1.substr(4000, 100) + ref1.substr(5000, 200) + ref1.substr(6000, 100));
+/*	string read = "AAGTTTGTGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG";
+	main_graph.SFinder(read);
+	string read2 = reverse(read);
+	main_graph.SFinder(read2);
 	system("pause");
 	
-/*
-	Graph Graph1;
+*/
+	/*Graph Graph1;
 
 	Node n1("aaaaaaaaaaaaaaaaaa", 0);
 	Node n2("cccccccccccccccccc", 2);    Node n4("ttttttttttttttt", 4);
@@ -81,13 +106,14 @@ void main(int argc, const char* argv[])
 
 	Graph1.BuildIndex(5, 4);
 	Graph1.BubbleIndexBuild();
+	string read1 = "aaaaaaccccccccccccccccccggggggggggg";
+	string read2 = "aaaaaacccccccccNccccccccggggggggggg";
+	Graph1.SFinder(read2);
 
-	cout << endl << Graph1.Body[0].GetRelation(Graph1.Body[2]) << endl;;
 
 
-
-	Graph1.SFinder("aaaaaaccccccccccccccccccggggggggggg");
 	
+//	SRAalign(main_graph, argv5 + ".fasta", argv5 + ".logfasta", 5);
 	
 
 /*	map<int, string> m1;
@@ -101,8 +127,5 @@ void main(int argc, const char* argv[])
 	else {
 		// found
 	}*/
-	system("pause");
 
-
-	
 }

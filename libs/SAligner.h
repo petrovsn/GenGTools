@@ -1,10 +1,12 @@
 #pragma once
+#include <map>
+#include <vector>
+
 #include <iostream>
 #include <stdio.h>
-#include <vector>
+
 #include <string>
 #include <cstdio>
-#include <map>
 #include <math.h>
 #include <WArray.h>
 #include <Node.h>
@@ -489,6 +491,9 @@ public:
 class SAligner
 {
 public:
+	bool failed = false;
+
+
 	int hash_length;
 	int start_loc;
 	string read;
@@ -507,7 +512,15 @@ public:
 		}
 
 		int i = 0; 
-		while (r_matches[i].m.size() == 0) i++;
+		while (r_matches[i].m.size() == 0)
+		{
+			i++;
+			if (i == r_matches.size())
+			{
+				failed = true;
+				return;
+			}
+		}
 		for (auto t : r_matches[i].m)
 		{
 			start_loc = i;
@@ -518,7 +531,12 @@ public:
 	int Run()
 	{
 		int curr_loc= start_loc+hash_length - 1;
-		int max_pos = r_matches.size();
+		int max_pos = r_matches.size()-1;
+		if (curr_loc > max_pos)
+		{
+			STracks.Clear();
+			return 0;
+		}
 		do
 		{
 			STracks.Step(curr_loc, r_matches[curr_loc]);
@@ -530,7 +548,9 @@ public:
 
 	int Ligation(int readlen, map<int, Node> &Body)
 	{
+		if (STracks.stored_path.size() == 0) return -1;
 		STracks.InitRelations(Body);
+		
 		float coverage = STracks.LigationBurn(readlen);
 		if (coverage >= 0.75) return 0;
 
