@@ -1,12 +1,10 @@
 #pragma once
-#include <map>
-#include <vector>
-
 #include <iostream>
 #include <stdio.h>
-
+#include <vector>
 #include <string>
 #include <cstdio>
+#include <map>
 #include <math.h>
 #include <WArray.h>
 #include <Node.h>
@@ -102,6 +100,8 @@ public:
 	SBundle(STrack strack)
 	{
 		Tracks.push_back(strack);
+		failed_elong = false;
+		cont = true;
 	};
 
 	void Increase(int loc, pair<int, int> p1, pair<int, int>p2)
@@ -493,7 +493,6 @@ class SAligner
 public:
 	bool failed = false;
 
-
 	int hash_length;
 	int start_loc;
 	string read;
@@ -530,6 +529,7 @@ public:
 
 	int Run()
 	{
+
 		int curr_loc= start_loc+hash_length - 1;
 		int max_pos = r_matches.size()-1;
 		if (curr_loc > max_pos)
@@ -548,11 +548,12 @@ public:
 
 	int Ligation(int readlen, map<int, Node> &Body)
 	{
+		//cout<<"SAligner: Ligation start"<<endl;
 		if (STracks.stored_path.size() == 0) return -1;
 		STracks.InitRelations(Body);
 		
 		float coverage = STracks.LigationBurn(readlen);
-		if (coverage >= 0.75) return 0;
+		if (coverage >= 0.9) return 0;
 
 		return -1;
 	}

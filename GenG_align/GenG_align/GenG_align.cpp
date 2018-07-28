@@ -71,7 +71,7 @@ void main(int argc, const char* argv[])
 	main_graph.BubbleIndexBuildTest();
 
 	SRAalign(main_graph, argv5 + ".fasta", argv5 + ".logfasta", 5);
-
+//	main_graph.SFinder("");
 
 //	main_graph.NotSimpleFinderSNAP(ref1.substr(50, 2000));
 

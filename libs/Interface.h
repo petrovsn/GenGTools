@@ -50,8 +50,16 @@ public:
 	int Finalize()
 	{
 		if (enabled) return -1;
-		result.wait();
-		return result.get();
+		future_status res_stat = result.wait_for(chrono::microseconds(1));
+		if (res_stat == future_status::ready)
+			return result.get();
+		if (res_stat == future_status::timeout)
+		{
+			result.wait();
+			return result.get();
+		}
+		if (res_stat == future_status::deferred)
+			return -1;
 	}
 
 	void Run(Graph &VG, string read)
