@@ -824,6 +824,17 @@ int Graph::SFinder(string str, int err_count)
 
 	if (str.length()<GH.len) return -1;
 	int res = -1;
+
+	int countN = 0;
+	for (int i = 0; i < str.size(); i++)
+	{
+		if ((str[i] == 'N') || (str[i] == 'n'))
+		{
+			countN++;
+		}
+	}
+	if (countN > 5) return -1;
+	
 	vector<vector<unsigned long long>> hash_seeds;
 
 	StringVectorHash SVH = StringVectorHash(GH.base, GH.len);

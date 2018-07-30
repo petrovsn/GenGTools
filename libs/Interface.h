@@ -1,4 +1,4 @@
-#pragma once
+ #pragma once
 #include <iostream>
 #include <stdio.h>
 #include <vector>
@@ -21,164 +21,201 @@
 
 using namespace std;
 
+
+struct  Results
+{
+	int total = 0;
+	int aligned = 0;
+
+	Results operator + (const Results &v1)
+	{
+		Results res;
+		res.total = v1.total + this->total;
+		res.aligned = v1.aligned + this->aligned;
+		return res;
+	}
+};
+
 class Worker
 {
 public:
+
+	future<Results> result;
 	bool enabled;
-	future<int> result;
-	string curr_read;
-
-	Worker()
+	int ID;
+	string curr_read = "";
+	Worker(int nID)
 	{
-		enabled = true;
-	};
-
-	bool Check()
-	{
-		if (enabled) return true;
-		future_status res_stat = result.wait_for(chrono::microseconds(1));
-		bool res = (res_stat == future_status::ready);
-		return (res);
+		ID = nID;
 	}
 
-	int GetValue()
+	void Run(Graph *VG, ifstream *fin, mutex *mut)
 	{
-		if (enabled) return -1;
-		else return result.get();
+		enabled = false;
+		result = async(launch::async, &Worker::ThreadTask, this, VG, fin, mut);
 	}
 
-	int Finalize()
+	Results ThreadTask(Graph *VG, ifstream *fin, mutex *mut)	
 	{
-		if (enabled) return -1;
-		future_status res_stat = result.wait_for(chrono::microseconds(1));
+		Results res;
+		int aligned_reads=0;
+		int total_reads=0;
+		string read = "";
+		mut->lock();
+		while (!fin->eof())
+		{
+			getline(*fin, read);
+			getline(*fin, read);
+			mut->unlock();
+			total_reads++;
+			string res_read = reverse(read);
+			curr_read = read;
+			int tmp_res = VG->SFinder(read);
+			if (tmp_res != 0)
+			{	curr_read = res_read;
+				tmp_res = VG->SFinder(res_read);
+			}
+			if (tmp_res == 0)
+			{
+				aligned_reads++;
+			}
+			mut->lock();
+		}
+		mut->unlock();
+		res.aligned = aligned_reads;
+		res.total = total_reads;
+		return res;
+	}
+
+	Results Finalize()
+	{
+		future_status res_stat = result.wait_for(chrono::microseconds(100));
 		if (res_stat == future_status::ready)
+		{
+			cout<<"ID = "<<ID<<endl;
+			cout<<"status: ready"<<endl;
 			return result.get();
+		}
 		if (res_stat == future_status::timeout)
 		{
+			cout<<"ID = "<<ID<<endl;
+			cout<<"status: timeout"<<endl;
+			cout<<"Read: "<<curr_read<<endl;
+			//Results res;
+			//return res;
+
 			result.wait();
 			return result.get();
 		}
 		if (res_stat == future_status::deferred)
-			return -1;
-	}
-
-	void Run(Graph &VG, string read)
-	{
-		curr_read = read;
-		enabled = false;
-		result = async(launch::async, &Worker::OneReadAlign, this, ref(VG), read);
-	}
-
-	int OneReadAlign(Graph &VG, string read)
-	{
-		string res_read = reverse(read);
-		int tmp_res = VG.SFinder(read);
-		if (tmp_res != 0)
 		{
-			tmp_res = VG.SFinder(res_read);
+			cout<<"ID = "<<ID<<endl;
+			cout<<"status: deferred"<<endl;
+			Results res;
+			return res;
 		}
-		return tmp_res;
 	}
+
 };
+
 
 class ThreadPool
 {
-
 public:
-
-	int aligned_reads;
-	int FreeCount;
+	ifstream fin;
 	vector<Worker> threads;
+	mutex mut;
 
-	ThreadPool(int numthreads)
+	ThreadPool(string path, int numthreads)
 	{
+		fin = ifstream(path);
 		for (int i = 0; i < numthreads; i++)
 		{
-			threads.push_back(Worker());
+			threads.push_back(Worker(i));
+		}
+		cout<<"TPool construct: numthreads = "<<threads.size()<<endl;
+	}
+
+	void Run(Graph &VG)
+	{
+		for (int i = 0; i < threads.size(); i++)
+		{
+			threads[i].Run(&VG, &fin, &mut);
 		}
 	}
 
-	int getFreeThread()
+	Results GetResults()
 	{
-		int res = -1;
+		Results res;
+		res.aligned = 0;
+		res.total = 0;
+
 		for (int i = 0; i < threads.size(); i++)
 		{
-			if (threads[i].Check())
-			{
-				res = i;
-				if (threads[i].GetValue() == 0)
-				{
-					aligned_reads++;
-				}
-				return res;
-			}
+			res = res + threads[i].Finalize();
 		}
 		return res;
 	}
 
-	void RunAlignment(int ThreadId, Graph &VG, string read)
-	{
-		threads[ThreadId].Run(VG, read);
-	}
-
-
-	void FinishAll()
-	{
-		for (int i = 0; i < threads.size(); i++)
-		{
-			int tmp = threads[i].Finalize();
-			if (tmp == 0) aligned_reads++;
-		}
-	}
 };
-
-
-
-
-
-
 
 
 int SRAalign(Graph &VG, string path, string output, int numthreads)
 {
+	ThreadPool TPool(path, numthreads);
+	cout<<"SRAAlign: TPool created"<<endl;
+	TPool.Run(VG);
+	cout<<"SRAAlign: TPool runned"<<endl;
+	Results res = TPool.GetResults();
+	cout<<"SRAAlign: TPool results got"<<endl;
+
+	ofstream f_out;
+
+	f_out.open(output);
+	f_out << "Total:" << res.total << '\n';
+	f_out << "Aligned:" << res.aligned << '\n';
+	//f_out << "Nonaligned:" << TPool.non_aligned_reads << '\n';
+	f_out.close();
+
+	
+	cout<<"SRAAlign: file was writed"<<endl;
+	
+
+	return 0;
+}
+
+
+void RemoveDupsFromFile(string path, string output)
+{
 	map<string, bool> checked;
-	int count = 0;
-	int total = 0;
-	int failed_r = 0;
-	int failed_s = 0;
 
-	string buf;
-	string res_buf;
 	ifstream fin(path);
-	ThreadPool TPool = ThreadPool(numthreads);
+	ofstream f_out(output);
+	string buf;
+	string title;
+	string res_buf;
 
-	while (!fin.eof())
+	while ((!fin.eof()))
 	{
-
-		getline(fin, buf);
+		getline(fin, title);
 		getline(fin, buf);
 		res_buf = reverse(buf);
-
-
 
 		if ((checked.find(buf) == checked.end()) &&
 			(checked.find(res_buf) == checked.end()))
 		{
 			checked[buf] = true;
 			checked[res_buf] = true;
-			total++;
 
-			int r = -1;
-			do
-			{
-				r= TPool.getFreeThread();
-			} while (r == -1);
-
-			TPool.RunAlignment(r, VG, buf);
+			f_out << title << endl;
+			f_out << buf << endl;
 		}
+
+		
 	}
-	TPool.FinishAll();
-	return 0;
+	fin.close();
+	f_out.close();
+
 }
 
 int SRAalign(Graph &VG, string path, string output)

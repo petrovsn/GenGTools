@@ -553,7 +553,7 @@ public:
 		STracks.InitRelations(Body);
 		
 		float coverage = STracks.LigationBurn(readlen);
-		if (coverage >= 0.9) return 0;
+		if (coverage >= 0.75) return 0;
 
 		return -1;
 	}

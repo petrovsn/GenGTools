@@ -70,8 +70,8 @@ void main(int argc, const char* argv[])
 	main_graph.LoadIndex(argv5 + ".gngidx");
 	main_graph.BubbleIndexBuildTest();
 
-	SRAalign(main_graph, argv5 + ".fasta", argv5 + ".logfasta", 5);
-//	main_graph.SFinder("");
+//	SRAalign(main_graph, argv5 + ".fasta", argv5 + ".logfasta", 5);
+	main_graph.SFinder("NNNNNNNNNNNNNNNNNNNNNNNNNNN");
 
 //	main_graph.NotSimpleFinderSNAP(ref1.substr(50, 2000));
 
